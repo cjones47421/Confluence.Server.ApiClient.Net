@@ -4,3 +4,6 @@
 
 /.vs
 /obj
+/bin/Debug/net8.0/Confluence.Server.ApiClient.Net.deps.json
+/bin/Debug/net8.0/Confluence.Server.ApiClient.Net.dll
+/bin/Debug/net8.0/Confluence.Server.ApiClient.Net.pdb
