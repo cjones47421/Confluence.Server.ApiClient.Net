@@ -1,7 +1,7 @@
 using Refit;
 using System.Net;
 
-namespace ConfluenceApiClient;
+namespace Confluence.Server.ApiClient.Net;
 
 public class ConfluenceApiClientResult<T>
 {

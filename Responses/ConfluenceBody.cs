@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ConfluenceApiClient;
+namespace Confluence.Server.ApiClient.Net;
 
 public class ConfluenceBody
 {

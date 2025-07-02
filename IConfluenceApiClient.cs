@@ -1,6 +1,6 @@
 using Refit;
 
-namespace ConfluenceApiClient;
+namespace Confluence.Server.ApiClient.Net;
 
 public interface IConfluenceApiClient
 {

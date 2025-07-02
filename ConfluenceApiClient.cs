@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Refit;
 using System.Collections.Generic;
 
-namespace ConfluenceApiClient;
+namespace Confluence.Server.ApiClient.Net;
 
 public class ConfluenceApiClient : IConfluenceApiClient
 {
