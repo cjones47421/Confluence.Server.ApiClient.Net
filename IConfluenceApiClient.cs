@@ -19,6 +19,12 @@ public interface IConfluenceApiClient
     [Get("/rest/api/content/search?cql=space={spaceKey} AND type=page&expand=metadata&limit={limit}&start={start}")]
     Task<ApiResponse<ConfluencePagesResponse>> GetPagesMetadataAsync(string spaceKey, int start = 0, int limit = 100);
 
+    [Get("/rest/api/content/{id}/child/page?expand=title,body.storage&limit={limit}&start={start}")]
+    Task<ApiResponse<ConfluencePagesResponse>> GetChildPagesAsync(string id, int start = 0, int limit = 100);
+
+    [Get("/rest/api/search?cql={cql}&expand=content.id,content.body.view&limit={limit}&start={start}")]
+    Task<ApiResponse<ConfluenceSearchResponse>> SearchContentWithViewAsync(string cql, int limit = 100, int start = 0);
+
     //The implementation of this method is simplified to return a custom result type and is not use Refit's ApiResponse directly.
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
     Task<ConfluenceApiClientResult<ConfluencePageTitlesAndBodiesResponse>> GetConfluencePageTitleAndBodyListAsync(string spaceKey, int start = 0, int limit = 100);
@@ -26,4 +32,8 @@ public interface IConfluenceApiClient
     //The implementation of this method is simplified to return a custom result type and is not use Refit's ApiResponse directly.
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
     Task<ConfluenceApiClientResult<ConfluencePageTitlesAndBodiesResponse>> GetConfluencePageTitleAndBodyListByIdsAsync(List<string> pageIds);
+
+    //The implementation of this method is simplified to return a custom result type and is not use Refit's ApiResponse directly.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
+    Task<Dictionary<string, string>> GetAllHtmlAsync(string parentId, string spaceKey);
 }

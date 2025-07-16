@@ -1,8 +1,11 @@
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Refit;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Confluence.Server.ApiClient.Net;
 
@@ -22,6 +25,7 @@ public class ConfluenceApiClient : IConfluenceApiClient
             BaseAddress = new System.Uri(config.BaseUrl)
         };
         HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.ApiToken);
+        HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         _api = RestService.For<IConfluenceApiClient>(HttpClient);
     }
 
@@ -36,6 +40,16 @@ public class ConfluenceApiClient : IConfluenceApiClient
     public async Task<ApiResponse<ConfluencePageResponse>> GetPageByIdAsync(string id)
     {
         return await _api.GetPageByIdAsync(id);
+    }
+
+    public async Task<ApiResponse<ConfluencePagesResponse>> GetChildPagesAsync(string id, int start = 0, int limit = 100)
+    {
+        return await _api.GetChildPagesAsync(id, start, limit);
+    }
+
+    public async Task<ApiResponse<ConfluenceSearchResponse>> SearchContentWithViewAsync(string cql, int limit = 100, int start = 0)
+    {
+        return await _api.SearchContentWithViewAsync(cql, limit, start);
     }
 
     public async Task<ConfluenceApiClientResult<ConfluencePageTitlesAndBodiesResponse>> GetConfluencePageTitleAndBodyListAsync(string spaceKey, int start = 0, int limit = 100)
@@ -149,5 +163,49 @@ public class ConfluenceApiClient : IConfluenceApiClient
                 TitleAndBodyList = allPages
             }
         };
+    }
+
+    /// <summary>
+    /// Fetches HTML for the parent page and all its descendants in one or more paged calls.
+    /// </summary>
+    public async Task<Dictionary<string, string>> GetAllHtmlAsync(string parentId, string spaceKey)
+    {
+        var pages = new Dictionary<string, string>();
+        int totalFetched = 0;
+
+        // Build CQL including space filter
+        var cqlRaw = $"(id={parentId} OR ancestor={parentId}) AND type=page AND space=\"{spaceKey}\"";
+        const int pageSize = 100;
+
+        do
+        {
+            var response = await SearchContentWithViewAsync(cqlRaw, pageSize, totalFetched);
+
+            if (!response.IsSuccessStatusCode || response.Content == null)
+            {
+                break;
+            }
+
+            foreach (var result in response.Content.Results)
+            {
+                if (!string.IsNullOrEmpty(result.Id))
+                {
+                    var html = result.Body?.View?.Value ?? "";
+                    pages[result.Id] = html;
+                }
+            }
+
+            totalFetched += response.Content.Results.Count;
+
+            // Check if we've fetched all pages
+            if (response.Content.Results.Count < pageSize ||
+                !string.IsNullOrEmpty(response.Content.Links?.Next) == false)
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return pages;
     }
 }

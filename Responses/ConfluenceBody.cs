@@ -7,6 +7,9 @@ public class ConfluenceBody
     [JsonPropertyName("storage")]
     public ConfluenceBodyStorage Storage { get; set; } = new();
 
+    [JsonPropertyName("view")]
+    public ConfluenceBodyView View { get; set; } = new();
+
     [JsonPropertyName("_expandable")]
     public ConfluenceBodyExpandable Expandable { get; set; } = new();
 }
@@ -23,7 +26,25 @@ public class ConfluenceBodyStorage
     public ConfluenceBodyStorageExpandable Expandable { get; set; } = new();
 }
 
+public class ConfluenceBodyView
+{
+    [JsonPropertyName("value")]
+    public string Value { get; set; } = string.Empty;
+
+    [JsonPropertyName("representation")]
+    public string Representation { get; set; } = string.Empty;
+
+    [JsonPropertyName("_expandable")]
+    public ConfluenceBodyViewExpandable Expandable { get; set; } = new();
+}
+
 public class ConfluenceBodyStorageExpandable
+{
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
+}
+
+public class ConfluenceBodyViewExpandable
 {
     [JsonPropertyName("content")]
     public string Content { get; set; } = string.Empty;

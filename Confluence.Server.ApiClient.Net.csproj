@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackageId>Confluence.Server.ApiClient.Net</PackageId>
-	<Version>1.0.1</Version>
+	<Version>1.0.3</Version>
 	<Authors>Christopher Jones</Authors>
 	<Company>N/A</Company>
 	<Description>A .NET Core 8+ API client for Confluence Server</Description>
