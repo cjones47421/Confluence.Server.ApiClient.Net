@@ -23,7 +23,13 @@ public interface IConfluenceApiClient
     Task<ApiResponse<ConfluencePagesResponse>> GetChildPagesAsync(string id, int start = 0, int limit = 100);
 
     [Get("/rest/api/search?cql={cql}&expand=content.id,content.body.view&limit={limit}&start={start}")]
-    Task<ApiResponse<ConfluenceSearchResponse>> SearchContentWithViewAsync(string cql, int limit = 100, int start = 0);
+    Task<ApiResponse<ConfluenceSearchResponse>> SearchContentWithViewAsync(string cql, int limit = 100, int start = 0);  
+
+    [Get("/rest/api/search?cql={cql}&limit=0")]
+    Task<ApiResponse<ConfluenceSearchResponse>> GetConfluenceSearhLimitZero(string cql);
+
+    [Get("/rest/api/search?cql={cql}&expand=content.id,content.title,content.version,content.body.view&limit={limit}&start={start}")]
+    Task<ApiResponse<ConfluenceSearchResponse>> SearchPagesWithViewAsync(string cql, int limit = 100, int start = 0);
 
     //The implementation of this method is simplified to return a custom result type and is not use Refit's ApiResponse directly.
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
@@ -36,4 +42,13 @@ public interface IConfluenceApiClient
     //The implementation of this method is simplified to return a custom result type and is not use Refit's ApiResponse directly.
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
     Task<Dictionary<string, string>> GetAllHtmlAsync(string parentId, string spaceKey);
+
+    // Returns the total number of pages in <spaceKey> under parentId (incl. the parent itself).
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
+    Task<int> GetPageCountAsync(string parentId, string spaceKey);
+
+    // Fetches HTML for the parent page and all its descendants in one or more paged calls.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Refit", "RF001:Refit types must have Refit HTTP method attributes", Justification = "Utilizes refit on the method level")]
+    Task<List<ConfluencePageInfo>> GetAllPageHtmlAsync(string parentId, string spaceKey, DateTime? since = null);
+
 }

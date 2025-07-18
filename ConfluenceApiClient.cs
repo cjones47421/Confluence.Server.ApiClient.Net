@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace Confluence.Server.ApiClient.Net;
 
@@ -50,6 +51,11 @@ public class ConfluenceApiClient : IConfluenceApiClient
     public async Task<ApiResponse<ConfluenceSearchResponse>> SearchContentWithViewAsync(string cql, int limit = 100, int start = 0)
     {
         return await _api.SearchContentWithViewAsync(cql, limit, start);
+    }
+
+    public async Task<ApiResponse<ConfluenceSearchResponse>> SearchPagesWithViewAsync(string cql, int limit = 100, int start = 0)
+    {
+        return await _api.SearchPagesWithViewAsync(cql, limit, start);
     }
 
     public async Task<ConfluenceApiClientResult<ConfluencePageTitlesAndBodiesResponse>> GetConfluencePageTitleAndBodyListAsync(string spaceKey, int start = 0, int limit = 100)
@@ -207,5 +213,94 @@ public class ConfluenceApiClient : IConfluenceApiClient
         while (true);
 
         return pages;
+    }
+
+    /// <summary>
+    /// Returns the total number of pages in <spaceKey> under parentId (incl. the parent itself).
+    /// </summary>
+    public async Task<int> GetPageCountAsync(string parentId, string spaceKey)
+    {
+        var rawCql = $"space=\"{spaceKey}\" AND (id={parentId} OR ancestor={parentId}) AND type=page";
+        var response = await _api.GetConfluenceSearhLimitZero(rawCql);
+        if (response.IsSuccessStatusCode && response.Content != null)
+        {
+            // totalSize is the total matching pages count
+            return response.Content.Size;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Fetches HTML for the parent page and all its descendants in one or more paged calls.
+    /// </summary>
+    public async Task<List<ConfluencePageInfo>> GetAllPageHtmlAsync(string parentId, string spaceKey, DateTime? since = null)
+    {
+        var pages = new List<ConfluencePageInfo>();
+        int totalFetched = 0;
+        const int pageSize = 100;
+
+        // Build the base CQL for parent/ancestor, type and space
+        var cqlParts = new List<string>
+        {
+            $"space=\"{spaceKey}\"",
+            $"(id={parentId} OR ancestor={parentId})",
+            "type=page"
+        };
+
+        // Only add lastmodified filter if 'since' has a value
+        if (since.HasValue)
+        {
+            // Format as UTC ISO8601 for CQL
+            var sinceStr = since.Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss") + "Z";
+            cqlParts.Add($"lastmodified > \"{sinceStr}\"");
+        }
+
+        var cqlRaw = string.Join(" AND ", cqlParts);
+
+        do
+        {
+            var response = await _api.SearchPagesWithViewAsync(cqlRaw, pageSize, totalFetched);
+            if (!response.IsSuccessStatusCode || response.Content == null)
+                break;
+
+            foreach (var result in response.Content.Results)
+            {
+                var lastModified = DateTime.MinValue;
+                if (result.Version is not null)
+                {
+                    var versionObj = result.Version as System.Text.Json.JsonElement?;
+                    if (versionObj.HasValue && versionObj.Value.TryGetProperty("when", out var whenProp))
+                    {
+                        var whenStr = whenProp.GetString();
+                        if (!string.IsNullOrEmpty(whenStr))
+                        {
+                            DateTime.TryParse(whenStr, null, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified);
+                        }
+                    }
+                }
+                if (since.HasValue && lastModified <= since.Value)
+                    continue;
+
+                pages.Add(new ConfluencePageInfo
+                {
+                    Id = result.Id,
+                    Title = result.Title,
+                    LastModified = lastModified,
+                    Html = result.Body?.View?.Value ?? ""
+                });
+            }
+
+            totalFetched += response.Content.Results.Count;
+            if (response.Content.Results.Count < pageSize)
+                break;
+        }
+        while (true);
+
+        return pages;
+    }
+
+    public async Task<ApiResponse<ConfluenceSearchResponse>> GetConfluenceSearhLimitZero(string cql)
+    {
+        return await _api.GetConfluenceSearhLimitZero(cql);
     }
 }
